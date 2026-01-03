@@ -1,19 +1,19 @@
 import os
-# --- FIX 1: Allows Google login to work on your local computer (http) ---
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_dance.contrib.google import make_google_blueprint, google
 from google import genai 
+from dotenv import load_dotenv
+load_dotenv()
+# --- FIX 1: Allows Google login to work on your local computer (http) ---
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
 
 # --- SAFE CONFIG: Loading secrets from Environment Variables ---
-# This prevents GitHub from blocking your upload
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "travel_secret_123")
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "your-id-here")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "your-secret-here")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 
 # --- 1. DATABASE CONFIG ---
@@ -33,21 +33,18 @@ with app.app_context():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # --- 3. GOOGLE OAUTH CONFIG ---
-app.config["GOOGLE_OAUTH_CLIENT_ID"] = GOOGLE_CLIENT_ID
-app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = GOOGLE_CLIENT_SECRET
-
 blueprint = make_google_blueprint(
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
     offline=True
 )
 app.register_blueprint(blueprint, url_prefix="/login")
 
 # --- 4. NEW AI CONFIG ---
-# This safely uses the variable we set at the top
 client = genai.Client(api_key=GEMINI_KEY)
 
 # --- 5. ROUTES ---
-
 @app.route('/')
 def home():
     if not session.get('user') and google.authorized:
@@ -99,18 +96,15 @@ def chat():
         user_msg = request.json.get("message")
         all_posts = Post.query.all()
         posts_info = "\n".join([f"- {p.title}: {p.desc}" for p in all_posts])
-        
         prompt = f"You are 'Vlogy', a travel assistant. Context:\n{posts_info}\nUser: {user_msg}"
         
         response = client.models.generate_content(
             model='gemini-2.0-flash', 
             contents=prompt
         )
-        
         return jsonify({"reply": response.text})
     except Exception as e:
-        print(f"DEBUG ERROR: {e}")
-        return jsonify({"reply": "I'm refreshing my travel maps. Please try again in a moment!"})
+        return jsonify({"reply": "I'm refreshing my travel maps. Please try again!"})
     
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
