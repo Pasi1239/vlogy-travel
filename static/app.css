@@ -1,103 +1,103 @@
-/* static/app.css */
+/* --- Global Styles --- */
 :root {
-    --bg-dark: #0f172a;       /* Deep Midnight Blue/Black */
-    --card-dark: #1e293b;     /* Slightly lighter for cards */
-    --accent-blue: #3b82f6;   /* Modern primary blue */
-    --text-main: #f8fafc;     /* Off-white for readability */
-    --text-muted: #94a3b8;    /* Soft gray for descriptions */
+    --primary-blue: #3b82f6;
+    --dark-bg: #0f172a;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 body {
-    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    margin: 0;
-    line-height: 1.6;
+    background-color: var(--dark-bg);
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+    min-height: 100vh;
 }
 
-/* Professional Navbar */
+/* --- Navbar & Logo --- */
 .navbar {
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(10px); /* Blur effect like iPhone/Mac */
-    padding: 1rem 8%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
 }
 
-.logo { 
-    font-size: 1.4rem; 
-    font-weight: 800; 
-    letter-spacing: -0.5px;
-    color: var(--accent-blue); 
+.logo {
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: white !important;
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
-/* The Vlog Grid */
-.vlog-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 30px;
-    padding: 40px 8%;
-}
-
-/* Modern Card Design */
+/* --- Vlog Cards --- */
 .vlog-card {
-    background: var(--card-dark);
-    border-radius: 16px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.vlog-card:hover { 
-    transform: translateY(-8px); 
-    border-color: var(--accent-blue);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+.vlog-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    border-color: var(--primary-blue);
 }
 
-.vlog-info { 
-    padding: 20px; 
+.card-img-top {
+    border-bottom: 1px solid var(--glass-border);
+    transition: filter 0.3s ease;
 }
 
-.vlog-info h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.25rem;
-    color: var(--text-main);
+.vlog-card:hover .card-img-top {
+    filter: brightness(1.1);
 }
 
-.vlog-info p {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    margin-bottom: 20px;
+/* --- Form Styles --- */
+.form-control {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: white !important;
+    border-radius: 10px;
 }
 
-/* Professional Button */
+.form-control:focus {
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* --- AI Chat UI --- */
+#chat-window {
+    border: 1px solid var(--glass-border);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.chat-bubble-user {
+    background: var(--primary-blue) !important;
+    border-radius: 15px 15px 0 15px !important;
+}
+
+.chat-bubble-ai {
+    background: #334155 !important;
+    border-radius: 15px 15px 15px 0 !important;
+    border: 1px solid var(--glass-border);
+}
+
+/* --- Buttons --- */
 .btn-primary {
-    background: var(--accent-blue);
-    color: white;
+    background-color: var(--primary-blue);
     border: none;
     padding: 10px 20px;
     border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
 }
 
 .btn-primary:hover {
-    opacity: 0.9;
+    background-color: #2563eb;
+    transform: scale(1.02);
 }
-
-
-#chat-circle { position: fixed; bottom: 20px; right: 20px; background: #007bff; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; }
-#chat-box { position: fixed; bottom: 90px; right: 20px; width: 300px; height: 400px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; z-index: 1000; overflow: hidden; }
-#chat-header { background: #007bff; color: white; padding: 15px; font-weight: bold; }
-#chat-messages { flex: 1; padding: 15px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
-.msg { padding: 8px 12px; border-radius: 15px; max-width: 80%; }
-.user { align-self: flex-end; background: #007bff; color: white; }
-.ai { align-self: flex-start; background: #f1f0f0; color: #333; }
-#chat-input-area { display: flex; padding: 10px; border-top: 1px solid #eee; }
-#user-input { flex: 1; border: none; outline: none; }

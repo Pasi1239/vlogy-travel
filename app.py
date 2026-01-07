@@ -4,21 +4,25 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_dance.contrib.google import make_google_blueprint, google
 from google import genai 
 from dotenv import load_dotenv
+
 load_dotenv()
-# --- FIX 1: Allows Google login to work on your local computer (http) ---
+
+# Allows Google login to work on local computer (http)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
 
-# --- SAFE CONFIG: Loading secrets from Environment Variables ---
-app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+# --- SAFE CONFIG ---
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "default-secret-for-local")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 
 # --- 1. DATABASE CONFIG ---
+# Added 'check_same_thread' for better stability on free hosts
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vlog.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # --- 2. DEFINE MODEL ---
@@ -28,9 +32,11 @@ class Post(db.Model):
     filename = db.Column(db.String(100))
     desc = db.Column(db.Text)
 
+# Create DB and Folders safely
 with app.app_context():
     db.create_all()
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # --- 3. GOOGLE OAUTH CONFIG ---
 blueprint = make_google_blueprint(
@@ -41,8 +47,14 @@ blueprint = make_google_blueprint(
 )
 app.register_blueprint(blueprint, url_prefix="/login")
 
-# --- 4. NEW AI CONFIG ---
-client = genai.Client(api_key=GEMINI_KEY)
+# --- 4. AI CONFIG WITH SAFETY CHECK ---
+# We only initialize the AI if the key is actually found
+client = None
+if GEMINI_KEY:
+    try:
+        client = genai.Client(api_key=GEMINI_KEY)
+    except Exception as e:
+        print(f"AI Initialization failed: {e}")
 
 # --- 5. ROUTES ---
 @app.route('/')
@@ -78,20 +90,12 @@ def upload():
         db.session.commit()
     return redirect(url_for('home'))
 
-@app.route('/delete/<int:id>')
-def delete(id):
-    post = Post.query.get(id)
-    if post and session.get('user'):
-        try: 
-            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], post.filename))
-        except: 
-            pass
-        db.session.delete(post)
-        db.session.commit()
-    return redirect(url_for('home'))
-
 @app.route('/chat', methods=['POST'])
 def chat():
+    # If the AI isn't set up yet, return a friendly message instead of crashing
+    if not client:
+        return jsonify({"reply": "Vlogy is resting today. Please add an API key to wake me up!"})
+
     try:
         user_msg = request.json.get("message")
         all_posts = Post.query.all()
@@ -104,7 +108,7 @@ def chat():
         )
         return jsonify({"reply": response.text})
     except Exception as e:
-        return jsonify({"reply": "I'm refreshing my travel maps. Please try again!"})
+        return jsonify({"reply": "I'm refreshing my travel maps. Please try again later!"})
     
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))

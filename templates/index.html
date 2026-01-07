@@ -8,9 +8,9 @@
     <title>TravelVlog Pro</title>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm bg-dark">
         <div class="container">
-            <a class="logo" href="/" style="text-decoration: none;">🌍 TRAVEL VLOG</a>
+            <a class="logo text-white fw-bold" href="/" style="text-decoration: none;">🌍 TRAVEL VLOG</a>
             <div class="ms-auto">
                 {% if session.get('user') %}
                     <span class="text-muted me-3 small">{{ session.get('user') }}</span>
@@ -24,20 +24,20 @@
 
     <div class="container py-5">
         {% if session.get('user') %}
-        <div class="vlog-card p-4 mb-5 shadow">
+        <div class="vlog-card p-4 mb-5 shadow bg-light border-0">
             <h4 class="mb-4">📸 Share a New Adventure</h4>
             <form action="/upload" method="post" enctype="multipart/form-data" class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label small text-muted">Trip Title</label>
-                    <input type="text" name="title" class="form-control bg-dark text-white border-secondary" placeholder="Where did you go?" required>
+                    <input type="text" name="title" class="form-control" placeholder="Where did you go?" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small text-muted">Photo or Video</label>
-                    <input type="file" name="file" class="form-control bg-dark text-white border-secondary" required>
+                    <input type="file" name="file" class="form-control" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label small text-muted">Story</label>
-                    <textarea name="desc" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Tell us about the journey..."></textarea>
+                    <textarea name="desc" class="form-control" rows="3" placeholder="Tell us about the journey..."></textarea>
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary w-100 fw-bold">Post to Vlog</button>
@@ -46,21 +46,25 @@
         </div>
         {% endif %}
 
-        <div class="vlog-grid">
+        <div class="vlog-grid row">
             {% for post in posts %}
-            <div class="vlog-card shadow-lg">
-                {% if post.filename.endswith(('.mp4', '.mov', '.webm')) %}
-                    <video src="{{ url_for('static', filename='uploads/' + post.filename) }}" class="w-100" controls style="height: 220px; object-fit: cover;"></video>
-                {% else %}
-                    <img src="{{ url_for('static', filename='uploads/' + post.filename) }}" class="w-100" style="height: 220px; object-fit: cover;">
-                {% endif %}
-                
-                <div class="vlog-info">
-                    <h3 class="h5 mt-2">{{ post.title }}</h3>
-                    <p class="small mb-4">{{ post.desc }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted tiny">Adventure #{{ post.id }}</span>
-                        <a href="/delete/{{ post.id }}" class="text-danger small text-decoration-none">Delete</a>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    {% if post.filename.endswith(('.mp4', '.mov', '.webm')) %}
+                        <video src="{{ url_for('static', filename='uploads/' + post.filename) }}" class="card-img-top" controls style="height: 220px; object-fit: cover;"></video>
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/' + post.filename) }}" class="card-img-top" style="height: 220px; object-fit: cover;">
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h3 class="h5 card-title">{{ post.title }}</h3>
+                        <p class="card-text small text-muted">{{ post.desc }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="text-muted" style="font-size: 0.7rem;">Adventure #{{ post.id }}</span>
+                            {% if session.get('user') %}
+                            <a href="/delete/{{ post.id }}" class="text-danger small text-decoration-none">Delete</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -68,6 +72,7 @@
         </div>
     </div>
 
+    {% if ai_available %}
     <div id="chat-bubble" onclick="toggleChat()" style="position:fixed; bottom:20px; right:20px; background:#3b82f6; color:white; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); z-index:9999; font-size:24px;">💬</div>
 
     <div id="chat-window" style="display:none; position:fixed; bottom:90px; right:20px; width:350px; height:450px; background:#1e293b; border-radius:15px; flex-direction:column; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:9999; border:1px solid rgba(255,255,255,0.1); overflow:hidden;">
@@ -87,49 +92,37 @@
     <script>
     function toggleChat() {
         const win = document.getElementById('chat-window');
-        if (win.style.display === 'none' || win.style.display === '') {
-            win.style.display = 'flex';
-        } else {
-            win.style.display = 'none';
-        }
+        win.style.display = (win.style.display === 'none' || win.style.display === '') ? 'flex' : 'none';
     }
 
     async function sendMessage() {
         const input = document.getElementById('chat-input');
         const content = document.getElementById('chat-content');
         const userText = input.value.trim();
-        
         if (!userText) return;
 
-        // 1. Add User Message to UI
         content.innerHTML += `<div style="background:#3b82f6; padding:10px; border-radius:10px; align-self:flex-end; max-width:80%;">${userText}</div>`;
         input.value = '';
         content.scrollTop = content.scrollHeight;
 
         try {
-            // 2. Call your Flask API
             const response = await fetch('/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({message: userText})
             });
-            
             const data = await response.json();
-
-            // 3. Add AI Reply to UI
             content.innerHTML += `<div style="background:#334155; padding:10px; border-radius:10px; align-self:flex-start; max-width:80%;">${data.reply}</div>`;
             content.scrollTop = content.scrollHeight;
         } catch (error) {
-            content.innerHTML += `<div style="color:#ef4444; font-size:12px; align-self:center;">Connection error. Is Flask running?</div>`;
+            content.innerHTML += `<div style="color:#ef4444; font-size:12px; align-self:center;">Vlogy is busy. Try again soon!</div>`;
         }
     }
 
-    // Allow "Enter" key to send message
     document.getElementById('chat-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
+        if (e.key === 'Enter') sendMessage();
     });
     </script>
+    {% endif %}
 </body>
 </html>
