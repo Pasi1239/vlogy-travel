@@ -24,8 +24,7 @@ GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 
 # --- DATABASE LOGIC ---
 # This looks for the Vercel Postgres URL first
-database_url = os.environ.get("ep-ancient-sun-ah7r5da8-pooler.c-3.us-east-1.aws.neon.tech")
-
+database_url = os.environ.get("POSTGRES_URL")
 # Fix: SQLAlchemy requires 'postgresql://', but Vercel/Neon often gives 'postgres://'
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
